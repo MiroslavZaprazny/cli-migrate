@@ -5,20 +5,24 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/MiroslavZaprazny/cli-migrate/migrator"
+	"github.com/MiroslavZaprazny/cli-migrate/file"
+	"github.com/MiroslavZaprazny/cli-migrate/migration"
 )
 
 func main() {
-    dbPath := flag.String("path", "", "")
+    // dbPath := flag.String("database", "", "")
+    // db := database.New(*dbPath)
+    filePath := flag.String("path", "migrations/migration.sql", "Path for the migration file")
     flag.Parse()
 
     switch flag.Arg(0) {
         case "create":
-            migrator.Create(dbPath)
+            file := file.New(*filePath, "--Write your migration here")
+            migration.Create(file)
         case "up":
-            migrator.Up()
+            migration.Up()
         case "down":
-            migrator.Down()
+            migration.Down()
         default:
             fmt.Printf("Unsupported action %s", flag.Arg(0))
             os.Exit(2)
