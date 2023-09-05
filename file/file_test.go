@@ -26,15 +26,14 @@ func TestConstructPath(t *testing.T) {
     }
 
     for _, test := range tests {
-        file := File{Path: test.input}
-        path, err := file.ContstructPath()
+        file, err := New(test.input, "test migration")
 
         if err != nil {
             t.Errorf("Error while constructing path %s", err.Error())
         }
 
-        if test.expected != path {
-            t.Errorf("Expected path to be %s got %s", test.expected, path)
+        if test.expected != file.Path {
+            t.Errorf("Expected path to be %s got %s", test.expected, file.Path)
         }
     }
 }

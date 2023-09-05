@@ -14,17 +14,22 @@ type File struct {
     Path string
 }
 
-func New(path string, content string) *File {
-    return &File{Path: path, Content: content}
+func New(path string, content string) (*File, error) {
+    constructedPath, err := contstructPath(path)
+    if err != nil {
+        return nil, err
+    }
+
+    return &File{Path: constructedPath, Content: content}, nil
 }
 
-func (f *File) ContstructPath() (string, error) {
-    extIdx := strings.Index(f.Path, ".")
+func contstructPath(path string) (string, error) {
+    extIdx := strings.Index(path, ".")
     if extIdx == -1 {
         return "", errors.New("Couldn't determine the file extension")
     }
 
-    lastSlashIdx := strings.LastIndex(f.Path, "/")
+    lastSlashIdx := strings.LastIndex(path, "/")
     if lastSlashIdx == -1 {
         return "", errors.New("Couldn't determine the file name")
     }
@@ -36,11 +41,18 @@ func (f *File) ContstructPath() (string, error) {
     }
 
     return fmt.Sprintf(
-        "%s/%s/%s-%s%s", 
+        "%s/%s/%s-%s%s",
         pwd,
-        f.Path[0:lastSlashIdx], 
-        time.Now().Format("2006-01-02-15-04-05"), 
-        f.Path[lastSlashIdx + 1:extIdx], 
-        f.Path[extIdx:]), 
+        path[0:lastSlashIdx],
+        time.Now().Format("2006-01-02-15-04-05"),
+        path[lastSlashIdx + 1:extIdx],
+        path[extIdx:]),
     nil
+}
+
+func (f *File) WriteContent() {
+    err := os.WriteFile(f.Path, []byte(f.Content), 0664)
+    if err != nil {
+        log.Fatal(err.Error())
+    }
 }

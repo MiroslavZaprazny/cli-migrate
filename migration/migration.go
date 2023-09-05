@@ -8,15 +8,11 @@ import (
 )
 
 func Create(file *file.File) {
-    path, err := file.ContstructPath()
+    _, err := os.Create(file.Path)
     if err != nil {
         log.Fatal(err.Error())
     }
-
-    _, err = os.Create(path)
-    if err != nil {
-        log.Fatal(err.Error())
-    }
+    file.WriteContent()
 }
 
 func Up() {}
