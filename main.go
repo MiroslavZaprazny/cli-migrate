@@ -6,12 +6,13 @@ import (
 	"log"
 	"os"
 
-	"github.com/MiroslavZaprazny/cli-migrate/file"
+	"github.com/MiroslavZaprazny/cli-migrate/database"
 	"github.com/MiroslavZaprazny/cli-migrate/migration"
 )
 
 func main() {
     filePath := flag.String("path", "", "Path for the migration file")
+    dbSource := flag.String("database", "", "Database source name")
     flag.Parse()
 
     switch flag.Arg(0) {
@@ -19,13 +20,10 @@ func main() {
             if *filePath == "" {
                 log.Fatal("Please provide a path to your migration folder when creating a migration.")
             }
-            file, err := file.New(*filePath, "--Write your migration here")
-            if err != nil {
-                log.Fatal(err)
-            }
-            migration.Create(file)
+                migration.Create(*filePath)
         case "up":
-            migration.Up()
+            db := database.New(*dbSource)
+            migration.Up(db)
         case "down":
             migration.Down()
         default:

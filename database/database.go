@@ -7,26 +7,26 @@ import (
 )
 
 type Db struct {
-    Path string
+    Source string
     Driver string
 }
 
-func New(path string) *Db {
-    driver, err := getDriverNameFromPath(path)
+func New(source string) *Db {
+    driver, err := getDriverNameFromSource(source)
 
     if err != nil {
         log.Fatal(err.Error())
     }
 
-    return &Db{Path: path, Driver: driver}
+    return &Db{Source: source, Driver: driver}
 }
 
-func getDriverNameFromPath(path string) (string, error) {
-    index := strings.Index(path, ":")
+func getDriverNameFromSource(source string) (string, error) {
+    index := strings.Index(source, ":")
 
     if index == -1 {
         return "", errors.New("No driver provided")
     } 
 
-    return path[0:index], nil
+    return source[0:index], nil
 }
