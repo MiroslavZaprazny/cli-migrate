@@ -8,6 +8,8 @@ import (
 
 	"github.com/MiroslavZaprazny/cli-migrate/database"
 	"github.com/MiroslavZaprazny/cli-migrate/file"
+    //TODO: add to another module?
+    _ "github.com/go-sql-driver/mysql"
 )
 
 var directions = []string{"up", "down"}
@@ -26,19 +28,21 @@ func Create(filePath string) {
     }
 }
 
-func Up(db *database.Db, files []file.File) {
-    openedDb, err := sql.Open(db.Driver, db.Source)
+func Up(db *database.Db, query string) error {
+    // openedDb, err := sql.Open(db.Driver, db.Url)
+    openedDb, err := sql.Open(db.Driver, "root:root@tcp(localhost:3306)/test")
 
     if err != nil {
-        log.Fatal(err)
+        return err
     }
 
-    for _, file := range files {
-        _, err := openedDb.Exec(file.Content)
-        if err != nil {
-            log.Fatal(err)
-        }
+    _, err = openedDb.Exec(query)
+
+    if err != nil {
+        return err
     }
+
+    return nil
 }
 
 func Down() {}

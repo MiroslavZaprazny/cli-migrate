@@ -7,7 +7,7 @@ import (
 )
 
 type Db struct {
-    Source string
+    Url string
     Driver string
 }
 
@@ -18,7 +18,23 @@ func New(source string) *Db {
         log.Fatal(err.Error())
     }
 
-    return &Db{Source: source, Driver: driver}
+    url, err := getUrlFromSource(source)
+
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    return &Db{Url: url, Driver: driver}
+}
+
+func getUrlFromSource(source string) (string, error) {
+    hostIdx := strings.Index(source, "://") + 3
+
+    if hostIdx == -1 {
+        log.Fatalf("Couldn't determine host")
+    }
+
+    return source[hostIdx:], nil
 }
 
 func getDriverNameFromSource(source string) (string, error) {
