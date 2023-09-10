@@ -1,1 +1,1 @@
-CREATE table testing;
+CREATE table testing(test TEXT);

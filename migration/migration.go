@@ -2,13 +2,15 @@ package migration
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/MiroslavZaprazny/cli-migrate/database"
 	"github.com/MiroslavZaprazny/cli-migrate/file"
-    //TODO: add to another module?
-    _ "github.com/go-sql-driver/mysql"
+
+	//TODO: add to another module?
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var directions = []string{"up", "down"}
@@ -34,6 +36,7 @@ func Up(db *database.Db, query string) error {
         return err
     }
 
+    fmt.Printf("Executing query: %s", query)
     _, err = openedDb.Exec(query)
 
     if err != nil {
