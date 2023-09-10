@@ -1,2 +1,1 @@
---Write your up migration here
-CREATE DATABASE test
+CREATE table testing;

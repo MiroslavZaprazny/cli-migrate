@@ -2,7 +2,6 @@ package migration
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"os"
 
@@ -16,7 +15,7 @@ var directions = []string{"up", "down"}
 
 func Create(filePath string) {
     for _, direction := range directions {
-        file, err := file.New(filePath, fmt.Sprintf("--Write your %s migration here", direction), direction)
+        file, err := file.New(filePath, "", direction)
         if err != nil {
             log.Fatal(err)
         }
@@ -29,8 +28,7 @@ func Create(filePath string) {
 }
 
 func Up(db *database.Db, query string) error {
-    // openedDb, err := sql.Open(db.Driver, db.Url)
-    openedDb, err := sql.Open(db.Driver, "root:root@tcp(localhost:3306)/test")
+    openedDb, err := sql.Open(db.Driver, db.Url)
 
     if err != nil {
         return err
