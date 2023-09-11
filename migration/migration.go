@@ -1,10 +1,10 @@
 package migration
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/MiroslavZaprazny/cli-migrate/database"
 	"github.com/MiroslavZaprazny/cli-migrate/file"
@@ -29,18 +29,35 @@ func Create(filePath string) {
     }
 }
 
-func Up(db *database.Db, query string) error {
-    openedDb, err := sql.Open(db.Driver, db.Url)
+func Up(dbSource string, filePath string) error {
+    db := database.New(dbSource)
+    pwd, err := os.Getwd()
 
     if err != nil {
-        return err
+        log.Fatal(err)
+    }
+    migrationPath := fmt.Sprintf("%s/%s", pwd, filePath)
+    entries, err := os.ReadDir(migrationPath)
+
+    if err != nil {
+        log.Fatal(err)
     }
 
-    fmt.Printf("Executing query: %s", query)
-    _, err = openedDb.Exec(query)
+    for _, entry := range entries {
+        directionIdx := strings.LastIndex(entry.Name(), "_up")
+        if directionIdx == -1 {
+            continue
+        }
 
-    if err != nil {
-        return err
+        content, err := os.ReadFile(fmt.Sprintf("%s/%s", migrationPath, entry.Name()))
+        if err != nil {
+            log.Fatal(err)
+        }
+        err = db.Execute(string(content))
+
+        if err != nil {
+            log.Fatal(err)
+        }
     }
 
     return nil

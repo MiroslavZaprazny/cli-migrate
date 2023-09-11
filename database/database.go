@@ -1,7 +1,9 @@
 package database
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 )
@@ -25,6 +27,23 @@ func New(source string) *Db {
     }
 
     return &Db{Url: url, Driver: driver}
+}
+
+func (db *Db) Execute(query string) error {
+    openedDb, err := sql.Open(db.Driver, db.Url)
+
+    if err != nil {
+        return err
+    }
+
+    fmt.Printf("Executing query: %s", query)
+    _, err = openedDb.Exec(query)
+
+    if err != nil {
+        return err
+    }
+
+    return nil
 }
 
 func getUrlFromSource(source string) (string, error) {
