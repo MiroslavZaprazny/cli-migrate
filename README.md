@@ -13,4 +13,7 @@ $ migrate -database mysql://user:password@localhost:3306/database -path database
 ```
 
 # Tests
-Run tests with docker compose build && docker compose run test go test ./...
+Run tests with 
+```bash
+docker compose build && docker compose run test go test ./...
+```
