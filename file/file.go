@@ -26,7 +26,7 @@ func New(path string, content string, direction string) (*File, error) {
 func contstructPath(path string, direction string) (string, error) {
     extIdx := strings.LastIndex(path, ".")
     if extIdx == -1 {
-        return "", errors.New("Couldn't determine the file extension")
+        return "", errors.New(fmt.Sprintf("Couldn't determine the file extension for %s", path))
     }
 
     lastSlashIdx := strings.LastIndex(path, "/")
