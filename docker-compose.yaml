@@ -1,11 +1,11 @@
 version: "3.8"
 services:
-  app:
+  test:
     build: .
     container_name: app
-    volumes: 
-      - .:/app/
-  db:
+    # volumes: 
+    #   - .:/app/
+  test-db:
     image: mysql:latest
     container_name: db
     ports:
