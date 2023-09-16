@@ -45,8 +45,7 @@ func Up(dbSource string, filePath string) error {
 
     for _, entry := range entries {
         upDirection := strings.LastIndex(entry.Name(), "_up")
-        downDirecrion := strings.LastIndex(entry.Name(), "_down")
-        if upDirection == -1 && downDirecrion == -1 {
+        if upDirection == -1 {
             continue
         }
 

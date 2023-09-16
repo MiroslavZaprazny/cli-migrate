@@ -72,6 +72,8 @@ func getUrlFromSource(source string) (string, error) {
         sb.WriteRune(char)
    }
 
+   sb.WriteString("?multiStatements=true")
+
    return sb.String()[hostIdx:], nil
 }
 
