@@ -1,0 +1,17 @@
+version: "3.8"
+services:
+  test:
+    build: .
+    container_name: test
+    # volumes: 
+    #   - .:/app/
+  test-db:
+    image: mysql:latest
+    container_name: test-db
+    ports:
+      - "4306:3306"
+    environment:
+      MYSQL_DATABASE: test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: root

@@ -14,8 +14,8 @@ type File struct {
     Path string
 }
 
-func New(path string, content string) (*File, error) {
-    constructedPath, err := contstructPath(path)
+func New(path string, content string, direction string) (*File, error) {
+    constructedPath, err := contstructPath(path, direction)
     if err != nil {
         return nil, err
     }
@@ -23,10 +23,10 @@ func New(path string, content string) (*File, error) {
     return &File{Path: constructedPath, Content: content}, nil
 }
 
-func contstructPath(path string) (string, error) {
-    extIdx := strings.Index(path, ".")
+func contstructPath(path string, direction string) (string, error) {
+    extIdx := strings.LastIndex(path, ".")
     if extIdx == -1 {
-        return "", errors.New("Couldn't determine the file extension")
+        return "", errors.New(fmt.Sprintf("Couldn't determine the file extension for %s", path))
     }
 
     lastSlashIdx := strings.LastIndex(path, "/")
@@ -41,11 +41,12 @@ func contstructPath(path string) (string, error) {
     }
 
     return fmt.Sprintf(
-        "%s/%s/%s-%s%s",
+        "%s/%s/%s-%s_%s%s",
         pwd,
         path[0:lastSlashIdx],
         time.Now().Format("2006-01-02-15-04-05"),
         path[lastSlashIdx + 1:extIdx],
+        direction,
         path[extIdx:]),
     nil
 }
