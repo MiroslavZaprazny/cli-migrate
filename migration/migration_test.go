@@ -35,13 +35,16 @@ func TestCreateMigrationFile(t *testing.T) {
     }
 }
 
-func TestUpMigration(t *testing.T) {
+func TestMigration(t *testing.T) {
     tests := []struct {
         migrationPath string
         expectedFileNames []string
         dbInput string
         dataSource string
         driver string
+        migrationContent string
+        migrationDirection string
+        table string
     } {
         {
             path.Join("../", "migration/test_create_table.sql"),
@@ -52,6 +55,23 @@ func TestUpMigration(t *testing.T) {
             "mysql://test:password@test-db:3306/test",
             "test:password@tcp(test-db:3306)/test",
             "mysql",
+            "CREATE TABLE testing(id int); INSERT INTO `testing` VALUES(1);",
+            "up",
+            "testing",
+        },
+
+        {
+            path.Join("../", "migration/test_create_table_test.sql"),
+            []string {
+                fmt.Sprintf("%s-%s", time.Now().Format("2006-01-02-15-04-05"), "test_create_table_up.sql"), 
+                fmt.Sprintf("%s-%s", time.Now().Format("2006-01-02-15-04-05"), "test_create_table_down.sql"),
+           },
+            "mysql://test:password@test-db:3306/test",
+            "test:password@tcp(test-db:3306)/test",
+            "mysql",
+            "CREATE TABLE testing2(id int); INSERT INTO `testing2` VALUES(1);",
+            "down",
+            "testing2",
         },
     }
 
@@ -64,28 +84,8 @@ func TestUpMigration(t *testing.T) {
     for _, test := range tests {
         Create(test.migrationPath)
         assertMigrationFilesAreCreated(t, projectPath, test.expectedFileNames)
-
-        entries, err := os.ReadDir(fmt.Sprintf("%s/migration", projectPath))
-        if err != nil {
-            t.Error(err)
-        }
-
-        for _, entry := range entries {
-            upIndex := strings.LastIndex(entry.Name(), "_up")
-            if upIndex == -1 {
-                continue
-            }
-            file, err := os.OpenFile(entry.Name(), os.O_RDWR, 0644)
-            if err != nil {
-                t.Error(err)
-            }
-            defer file.Close()
-            _, err = file.WriteAt([]byte("CREATE TABLE testing(id int); INSERT INTO `testing` VALUES(1);"), 0)
-            if err != nil {
-                t.Error(err)
-            }
-        }
-        Up(test.dbInput, path.Join(test.migrationPath, "../"))
+        prepareMigrationContent(t, test.migrationContent, projectPath, test.migrationDirection)
+        Migrate(test.dbInput, path.Join(test.migrationPath, "../"), test.migrationDirection)
 
         db, err := sql.Open(test.driver, test.dataSource)
         if err != nil {
@@ -93,7 +93,7 @@ func TestUpMigration(t *testing.T) {
         }
 
         var id int
-        row := db.QueryRow("SELECT id FROM `testing` WHERE id = 1")
+        row := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE id = 1", test.table))
         err = row.Scan(&id)
 
         if err != nil {
@@ -102,6 +102,28 @@ func TestUpMigration(t *testing.T) {
 
         if id != 1 {
             t.Errorf("Something went wrong and the migration was not executed")
+        }
+    }
+}
+
+func prepareMigrationContent(t *testing.T, content string, projectPath string, direction string) {
+    entries, err := os.ReadDir(fmt.Sprintf("%s/migration", projectPath))
+    if err != nil {
+        t.Error(err)
+    }
+    for _, entry := range entries {
+        upIndex := strings.LastIndex(entry.Name(), fmt.Sprintf("_%s", direction))
+        if upIndex == -1 {
+            continue
+        }
+        file, err := os.OpenFile(entry.Name(), os.O_RDWR, 0644)
+        if err != nil {
+            t.Error(err)
+        }
+        defer file.Close()
+        _, err = file.WriteAt([]byte(content), 0)
+        if err != nil {
+            t.Error(err)
         }
     }
 }
