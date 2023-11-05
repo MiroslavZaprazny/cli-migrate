@@ -48,6 +48,7 @@ func Migrate(dbSource string, filePath string, direction string) error {
         if directionIdx == -1 {
             continue
         }
+        log.Println(entry.Name())
 
         content, err := os.ReadFile(fmt.Sprintf("%s/%s", migrationPath, entry.Name()))
         if err != nil {

@@ -35,7 +35,6 @@ func main() {
             if err != nil {
                 log.Fatal(err)
             }
-
         case "down":
             if *filePath == "" {
                 //TODO: if no path is provided look in the pwd?

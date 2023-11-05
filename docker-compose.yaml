@@ -3,8 +3,8 @@ services:
   test:
     build: .
     container_name: test
-    # volumes: 
-    #   - .:/app/
+    volumes: 
+      - .:/app/
   test-db:
     image: mysql:latest
     container_name: test-db
