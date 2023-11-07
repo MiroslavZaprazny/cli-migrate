@@ -18,7 +18,7 @@ func TestGetDriverNameFromSource(t *testing.T) {
         }
 
         if driver != test.expected {
-            t.Errorf("Expcted %s got %s", test.expected, driver)
+            t.Errorf("Expected %s got %s", test.expected, driver)
         }
     }
 }
@@ -28,8 +28,8 @@ func TestGetUrlFromSource(t *testing.T) {
         input string
         expected string
     } {
-        {"mysql://root:root@localhost:3306/test", "root:root@tcp(localhost:3306)/test"},
-        {"postgre://testUser:password@127.0.0.1:3306/test", "testUser:password@tcp(127.0.0.1:3306)/test"},
+        {"mysql://root:root@localhost:3306/test", "root:root@tcp(localhost:3306)/test?multiStatements=true"},
+        {"postgre://testUser:password@127.0.0.1:3306/test", "testUser:password@tcp(127.0.0.1:3306)/test?multiStatements=true"},
     }
 
     for _, test := range tests {

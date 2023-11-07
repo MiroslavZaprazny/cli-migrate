@@ -30,14 +30,20 @@ func main() {
                 log.Fatal("Please provide your databse source.")
             }
 
-            err := migration.Up(*dbSource, *filePath)
+            err := migration.Migrate(*dbSource, *filePath, "down")
 
             if err != nil {
                 log.Fatal(err)
             }
-
         case "down":
-            migration.Down()
+            if *filePath == "" {
+                //TODO: if no path is provided look in the pwd?
+                log.Fatal("Please provide a path to your migration folder when running this command.")
+            }
+            if *dbSource == "" {
+                log.Fatal("Please provide your databse source.")
+            }
+            migration.Migrate(*dbSource, *filePath, "down")
         default:
             fmt.Printf("Unsupported action %s", flag.Arg(0))
             os.Exit(2)

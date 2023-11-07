@@ -29,7 +29,7 @@ func Create(filePath string) {
     }
 }
 
-func Up(dbSource string, filePath string) error {
+func Migrate(dbSource string, filePath string, direction string) error {
     db := database.New(dbSource)
     pwd, err := os.Getwd()
 
@@ -44,10 +44,11 @@ func Up(dbSource string, filePath string) error {
     }
 
     for _, entry := range entries {
-        upDirection := strings.LastIndex(entry.Name(), "_up")
-        if upDirection == -1 {
+        directionIdx := strings.LastIndex(entry.Name(), fmt.Sprintf("_%s", direction))
+        if directionIdx == -1 {
             continue
         }
+        log.Println(entry.Name())
 
         content, err := os.ReadFile(fmt.Sprintf("%s/%s", migrationPath, entry.Name()))
         if err != nil {
@@ -62,5 +63,3 @@ func Up(dbSource string, filePath string) error {
 
     return nil
 }
-
-func Down() {}

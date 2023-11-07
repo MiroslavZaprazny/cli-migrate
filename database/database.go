@@ -36,7 +36,7 @@ func (db *Db) Execute(query string) error {
         return err
     }
 
-    fmt.Printf("Executing query: %s", query)
+    fmt.Printf("Executing query: %s\n", query)
     _, err = openedDb.Exec(query)
 
     if err != nil {
