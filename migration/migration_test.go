@@ -156,7 +156,12 @@ func assertMigrationFilesAreCreated(t *testing.T, projectPath string, expectedFi
 
 func clearTestFolder(t *testing.T) {
     err := os.RemoveAll("../testdata/")
-    t.Fatalf("Failed clearing test folder: %s", err.Error())
-    err = os.MkdirAll("../testdata/", 0700)
-    t.Fatalf("Failed creating test folder: %s", err.Error())
+    if err != nil {
+        t.Fatalf("Failed clearing test folder: %s", err.Error())
+    }
+
+    err = os.MkdirAll("../testdata/", 0777)
+    if err != nil {
+        t.Fatalf("Failed creating test folder: %s", err.Error())
+    }
 }
