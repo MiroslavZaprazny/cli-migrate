@@ -15,22 +15,26 @@ func main() {
     flag.Parse()
 
     switch flag.Arg(0) {
+        case "init": {
+            if *dbSource == "" {
+                log.Fatal("Please provide your database source.")
+            }
+            migration.Init(*dbSource)
+        }
         case "create":
             if *filePath == "" {
-                //TODO: if no path is create the migration file in pwd?
                 log.Fatal("Please provide a path to your migration folder when creating a migration.")
             }
                 migration.Create(*filePath)
         case "up":
             if *filePath == "" {
-                //TODO: if no path is provided look in the pwd?
-                log.Fatal("Please provide a path to your migration folder when running this command.")
+                log.Fatal("Please provide a path to your migration folder.")
             }
             if *dbSource == "" {
-                log.Fatal("Please provide your databse source.")
+                log.Fatal("Please provide your database source.")
             }
 
-            err := migration.Migrate(*dbSource, *filePath, "down")
+            err := migration.Migrate(*dbSource, *filePath, "up")
 
             if err != nil {
                 log.Fatal(err)
@@ -38,7 +42,7 @@ func main() {
         case "down":
             if *filePath == "" {
                 //TODO: if no path is provided look in the pwd?
-                log.Fatal("Please provide a path to your migration folder when running this command.")
+                log.Fatal("Please provide a path to your migration folder.")
             }
             if *dbSource == "" {
                 log.Fatal("Please provide your databse source.")

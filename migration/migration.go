@@ -2,6 +2,7 @@ package migration
 
 import (
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"strings"
@@ -30,7 +31,10 @@ func Create(filePath string) {
 }
 
 func Migrate(dbSource string, filePath string, direction string) error {
-    db := database.New(dbSource)
+    db, err := database.New(dbSource)
+    if err != nil {
+        log.Fatalf("Failed to create database from source %s", dbSource)
+    }
     pwd, err := os.Getwd()
 
     if err != nil {
@@ -38,12 +42,39 @@ func Migrate(dbSource string, filePath string, direction string) error {
     }
     migrationPath := fmt.Sprintf("%s/%s", pwd, filePath)
     entries, err := os.ReadDir(migrationPath)
-
     if err != nil {
         log.Fatal(err)
     }
+    // get all migrations from db
+    // create a diff from the things we have in db and in the fs
+    // only loop through the diff
+    //TODO: move this to a private method?
+    //TODO: this only works for up migration, adjust this for down migrations aswell
+    result, err := db.Query("SELECT * FROM migration_versions")
+    var migrations []database.MigrationVersions
+    for result.Next() {
+        var migration database.MigrationVersions
+        if err := result.Scan(&migration.Name); err != nil {
+            break
+        }
+        migrations = append(migrations, migration)
+    }
 
+    //TODO: we can maybe move this to the for loop above
+    var lookup map[string]struct{}
+    for _, migration := range migrations {
+        lookup[migration.Name] = struct{}{}
+    }
+
+    var diff []fs.DirEntry
     for _, entry := range entries {
+        if _, ok := lookup[entry.Name()]; ok {
+            continue
+        }
+        diff = append(diff, entry)
+    }
+
+    for _, entry := range diff {
         directionIdx := strings.LastIndex(entry.Name(), fmt.Sprintf("_%s", direction))
         if directionIdx == -1 {
             continue
@@ -54,7 +85,9 @@ func Migrate(dbSource string, filePath string, direction string) error {
         if err != nil {
             log.Fatal(err)
         }
-        err = db.Execute(string(content))
+        query := string(content)
+        fmt.Printf("Executing query: %s\n", query)
+        _, err = db.Exec(query)
 
         if err != nil {
             log.Fatal(err)
@@ -63,3 +96,16 @@ func Migrate(dbSource string, filePath string, direction string) error {
 
     return nil
 }
+
+func Init(dbSource string) {
+    db, err := database.New(dbSource)
+    if err != nil {
+        log.Fatalf("Failed to create db from source: %s", dbSource)        
+    }
+
+    _, err = db.Exec("CREATE TABLE IF NOT EXISTS migration_versions(version_name varchar(255)")
+    if err != nil {
+        log.Fatal("Failed to create migration_versions table")
+    }
+}
+

@@ -138,6 +138,8 @@ func assertMigrationFilesAreCreated(t *testing.T, projectPath string, expectedFi
         t.Error(err.Error())
     }
 
+    //to make this more efficient we could consturct a map of entries in the fs
+    //and then just simply lookup if we are expecting it
     for _, expectedFile := range expectedFileNames {
         var found bool
         for _, entry := range entries {
