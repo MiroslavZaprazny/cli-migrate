@@ -34,14 +34,13 @@ func main() {
                 log.Fatal("Please provide your database source.")
             }
 
-            err := migration.Migrate(*dbSource, *filePath, "up")
+            err := migration.Up(*dbSource, *filePath)
 
             if err != nil {
                 log.Fatal(err)
             }
-        case "down":
+        case "reset":
             if *filePath == "" {
-                //TODO: if no path is provided look in the pwd?
                 log.Fatal("Please provide a path to your migration folder.")
             }
             if *dbSource == "" {

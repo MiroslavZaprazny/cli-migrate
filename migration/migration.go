@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"database/sql"
 	"fmt"
 	"io/fs"
 	"log"
@@ -30,41 +31,32 @@ func Create(filePath string) {
     }
 }
 
-func Migrate(dbSource string, filePath string, direction string) error {
+func Up(dbSource string, filePath string) error {
     db, err := database.New(dbSource)
     if err != nil {
-        log.Fatalf("Failed to create database from source %s", dbSource)
+        return fmt.Errorf("Failed to create database from source %s", dbSource)
     }
-    pwd, err := os.Getwd()
+    migrationDir, err := getMigrationDirFromPath(filePath)
 
+    entries, err := os.ReadDir(migrationDir)
     if err != nil {
-        log.Fatal(err)
+        return fmt.Errorf("Couldn't get migration entries: %s", err.Error())
     }
-    migrationPath := fmt.Sprintf("%s/%s", pwd, filePath)
-    entries, err := os.ReadDir(migrationPath)
-    if err != nil {
-        log.Fatal(err)
-    }
-    // get all migrations from db
-    // create a diff from the things we have in db and in the fs
-    // only loop through the diff
-    //TODO: move this to a private method?
-    //TODO: this only works for up migration, adjust this for down migrations aswell
+
     result, err := db.Query("SELECT * FROM migration_versions")
-    var migrations []database.MigrationVersions
+    if err != nil {
+        return fmt.Errorf("Couldn't get migrations from the db: %s", err.Error())
+    }
+
+    var lookup map[string]struct{}
     for result.Next() {
         var migration database.MigrationVersions
         if err := result.Scan(&migration.Name); err != nil {
             break
         }
-        migrations = append(migrations, migration)
+        lookup[migration.Name]  = struct{}{} 
     }
 
-    //TODO: we can maybe move this to the for loop above
-    var lookup map[string]struct{}
-    for _, migration := range migrations {
-        lookup[migration.Name] = struct{}{}
-    }
 
     var diff []fs.DirEntry
     for _, entry := range entries {
@@ -73,25 +65,33 @@ func Migrate(dbSource string, filePath string, direction string) error {
         }
         diff = append(diff, entry)
     }
+    err = executeMigrations(db, diff, migrationDir, "up")
+    if err != nil {
+        return err
+    }
 
-    for _, entry := range diff {
-        directionIdx := strings.LastIndex(entry.Name(), fmt.Sprintf("_%s", direction))
-        if directionIdx == -1 {
-            continue
-        }
-        log.Println(entry.Name())
+    return nil
+}
 
-        content, err := os.ReadFile(fmt.Sprintf("%s/%s", migrationPath, entry.Name()))
-        if err != nil {
-            log.Fatal(err)
-        }
-        query := string(content)
-        fmt.Printf("Executing query: %s\n", query)
-        _, err = db.Exec(query)
+func Reset(dbSource string, filePath string) error {
+    db, err := database.New(dbSource)
+    if err != nil {
+        log.Fatalf("Failed to create database from source %s", dbSource)
+    }
 
-        if err != nil {
-            log.Fatal(err)
-        }
+    migrationDir, err := getMigrationDirFromPath(filePath)
+    if err != nil {
+        return err
+    }
+
+    entries, err := os.ReadDir(migrationDir)
+    if err != nil {
+        return err
+    }
+    err = executeMigrations(db, entries, migrationDir, "down")
+
+    if err != nil {
+        return err
     }
 
     return nil
@@ -107,5 +107,37 @@ func Init(dbSource string) {
     if err != nil {
         log.Fatal("Failed to create migration_versions table")
     }
+}
+
+func executeMigrations(db *sql.DB, entries []fs.DirEntry, migrationDir string, direction string) error {
+    for _, entry := range entries {
+        directionIdx := strings.LastIndex(entry.Name(), fmt.Sprintf("_%s", direction))
+        if directionIdx == -1 {
+            continue
+        }
+        content, err := os.ReadFile(fmt.Sprintf("%s/%s", migrationDir, entry.Name()))
+        if err != nil {
+            return fmt.Errorf("Couldn't get the contents of %s migration file: %s", entry.Name(), err.Error())
+        }
+        fmt.Printf("Executing query for: %s\n", entry.Name())
+        query := string(content)
+        _, err = db.Exec(query)
+
+        if err != nil {
+            return fmt.Errorf("Something went wrong while executing query for migration %s: %s", entry.Name(), err.Error())
+        }
+    }
+
+    return nil
+}
+
+func getMigrationDirFromPath(filePath string) (string, error) {
+    pwd, err := os.Getwd()
+
+    if err != nil {
+        return "", err
+    }
+
+    return fmt.Sprintf("%s/%s", pwd, filePath), nil
 }
 
