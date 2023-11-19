@@ -30,13 +30,13 @@ func TestCreateMigrationFile(t *testing.T) {
        t.Error(err) 
     }
     for _, test := range tests {
-        clearTestFolder(t)
         Create(test.input)
         assertMigrationFilesAreCreated(t, projectPath, test.expectedFileNames)
+        clearTestFolder(t)
     }
 }
 
-func TestMigration(t *testing.T) {
+func TestUpMigration(t *testing.T) {
     tests := []struct {
         migrationPath string
         expectedFileNames []string
@@ -44,7 +44,6 @@ func TestMigration(t *testing.T) {
         dataSource string
         driver string
         migrationContent string
-        migrationDirection string
         table string
     } {
         {
@@ -57,7 +56,6 @@ func TestMigration(t *testing.T) {
             "test:password@tcp(test-db:3306)/test",
             "mysql",
             "CREATE TABLE testing(id int); INSERT INTO `testing` VALUES(1);",
-            "up",
             "testing",
         },
 
@@ -70,9 +68,8 @@ func TestMigration(t *testing.T) {
             "mysql://test:password@test-db:3306/test",
             "test:password@tcp(test-db:3306)/test",
             "mysql",
-            "CREATE TABLE downtest(id int); INSERT INTO `downtest` VALUES(1);",
-            "down",
-            "downtest",
+            "CREATE TABLE uptest2(id int); INSERT INTO `uptest2` VALUES(1);",
+            "uptest2",
         },
     }
 
@@ -83,16 +80,21 @@ func TestMigration(t *testing.T) {
     }
 
     for _, test := range tests {
-        clearTestFolder(t)
         Create(test.migrationPath)
         assertMigrationFilesAreCreated(t, projectPath, test.expectedFileNames)
-        prepareMigrationContent(t, test.migrationContent, projectPath, test.migrationDirection)
-        t.Logf("Running migrations for %s direction", test.migrationDirection)
-        Migrate(test.dbInput, "../testdata/", test.migrationDirection)
+        prepareMigrationContent(t, test.migrationContent, projectPath, "up")
+        err = Init(test.dbInput)
+        if err != nil {
+            t.Fatalf("Failed to init migration db table: %s", err.Error())
+        }
+        err = Up(test.dbInput, "../testdata/")
+        if err != nil {
+            t.Fatalf("Error while running migrations: %s", err.Error())
+        }
 
         db, err := sql.Open(test.driver, test.dataSource)
         if err != nil {
-            t.Errorf("Error while connecting to testing database %s", err.Error())
+            t.Fatalf("Error while connecting to testing database %s", err.Error())
         }
 
         var id int
@@ -100,13 +102,23 @@ func TestMigration(t *testing.T) {
         err = row.Scan(&id)
 
         if err != nil {
-            t.Errorf("Error while retrieving data, %s", err.Error())
+            t.Fatalf("Error while retrieving data, %s", err.Error())
         }
 
         if id != 1 {
-            t.Errorf("Something went wrong and the migration was not executed")
+            t.Fatalf("Something went wrong and the migration was not executed")
         }
+
+        clearTestFolder(t)
     }
+}
+
+func TestResetMigrations(t *testing.T) {
+
+}
+
+func TestInit(t *testing.T) {
+
 }
 
 func prepareMigrationContent(t *testing.T, content string, projectPath string, direction string) {
@@ -138,6 +150,8 @@ func assertMigrationFilesAreCreated(t *testing.T, projectPath string, expectedFi
         t.Error(err.Error())
     }
 
+    //to make this more efficient we could consturct a map of entries in the fs
+    //and then just simply lookup if we are expecting it
     for _, expectedFile := range expectedFileNames {
         var found bool
         for _, entry := range entries {

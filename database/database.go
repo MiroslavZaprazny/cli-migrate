@@ -3,47 +3,34 @@ package database
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"log"
 	"strings"
 )
 
-type Db struct {
-    Url string
-    Driver string
+type MigrationVersions struct {
+    Name string
 }
 
-func New(source string) *Db {
+func New(source string) (*sql.DB, error) {
     driver, err := getDriverNameFromSource(source)
 
     if err != nil {
-        log.Fatal(err.Error())
+        return nil, err
     }
 
     url, err := getUrlFromSource(source)
 
     if err != nil {
-        log.Fatal(err)
+        return nil, err
     }
 
-    return &Db{Url: url, Driver: driver}
-}
-
-func (db *Db) Execute(query string) error {
-    openedDb, err := sql.Open(db.Driver, db.Url)
+    openedDb, err := sql.Open(driver, url)
 
     if err != nil {
-        return err
+        return nil, err
     }
 
-    fmt.Printf("Executing query: %s\n", query)
-    _, err = openedDb.Exec(query)
-
-    if err != nil {
-        return err
-    }
-
-    return nil
+    return openedDb, nil
 }
 
 func getUrlFromSource(source string) (string, error) {
