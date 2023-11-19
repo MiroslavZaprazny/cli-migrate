@@ -46,7 +46,7 @@ func main() {
             if *dbSource == "" {
                 log.Fatal("Please provide your databse source.")
             }
-            migration.Migrate(*dbSource, *filePath, "down")
+            migration.Reset(*dbSource, *filePath)
         default:
             fmt.Printf("Unsupported action %s", flag.Arg(0))
             os.Exit(2)

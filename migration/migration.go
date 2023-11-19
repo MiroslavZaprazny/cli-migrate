@@ -49,22 +49,26 @@ func Up(dbSource string, filePath string) error {
     }
 
     var lookup map[string]struct{}
+    var migration database.MigrationVersions
     for result.Next() {
-        var migration database.MigrationVersions
         if err := result.Scan(&migration.Name); err != nil {
             break
         }
         lookup[migration.Name]  = struct{}{} 
     }
 
-
     var diff []fs.DirEntry
-    for _, entry := range entries {
-        if _, ok := lookup[entry.Name()]; ok {
-            continue
+    if len(lookup) == 0 {
+        diff = entries
+    } else {
+        for _, entry := range entries {
+            if _, ok := lookup[entry.Name()]; ok {
+                continue
+            }
+            diff = append(diff, entry)
         }
-        diff = append(diff, entry)
     }
+
     err = executeMigrations(db, diff, migrationDir, "up")
     if err != nil {
         return err
@@ -84,6 +88,7 @@ func Reset(dbSource string, filePath string) error {
         return err
     }
 
+    //Think we should get the migrations from the db
     entries, err := os.ReadDir(migrationDir)
     if err != nil {
         return err
@@ -97,16 +102,18 @@ func Reset(dbSource string, filePath string) error {
     return nil
 }
 
-func Init(dbSource string) {
+func Init(dbSource string) error {
     db, err := database.New(dbSource)
     if err != nil {
-        log.Fatalf("Failed to create db from source: %s", dbSource)        
+        return fmt.Errorf("Failed to create db from source: %s", dbSource)        
     }
 
-    _, err = db.Exec("CREATE TABLE IF NOT EXISTS migration_versions(version_name varchar(255)")
+    _, err = db.Exec("CREATE TABLE IF NOT EXISTS migration_versions(version_name varchar(255));")
     if err != nil {
-        log.Fatal("Failed to create migration_versions table")
+        return fmt.Errorf("Failed to create migration_versions table: %s", err.Error())
     }
+
+    return nil
 }
 
 func executeMigrations(db *sql.DB, entries []fs.DirEntry, migrationDir string, direction string) error {

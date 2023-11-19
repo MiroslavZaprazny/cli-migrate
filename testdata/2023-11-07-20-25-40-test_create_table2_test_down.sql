@@ -1,1 +1,0 @@
-CREATE TABLE downtest(id int); INSERT INTO `downtest` VALUES(1);
